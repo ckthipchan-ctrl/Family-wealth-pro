@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Duo Wealth Pro | Family Finance</title>
+  <meta name="theme-color" content="#0f172a">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Prompt', sans-serif; }
+    .font-num { font-family: 'Plus Jakarta Sans', sans-serif; font-variant-numeric: tabular-nums; }
+    .glass { background: rgba(255,255,255,0.9); backdrop-filter: blur(12px); }
+    .tab-active { background: #4f46e5; color: white; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+  <div id="loadingScreen" class="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center">
+    <div class="text-center text-white space-y-3">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-2xl animate-pulse">💎</div>
+      <div class="text-sm text-slate-400">กำลังโหลด Duo Wealth Pro...</div>
+    </div>
+  </div>
+
+  <!-- AUTH -->
+  <div id="authScreen" class="hidden min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+    <div class="w-full max-w-md">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-3xl shadow-lg shadow-indigo-500/30">💎</div>
+        <h1 class="text-2xl font-bold text-white mt-4">Duo Wealth Pro</h1>
+        <p class="text-slate-400 text-sm mt-1">ระบบการเงินครอบครัว</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-6 space-y-4">
+        <div class="flex bg-slate-900/50 p-1 rounded-2xl">
+          <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white">เข้าสู่ระบบ</button>
+          <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-300">สมัครสมาชิก</button>
+        </div>
+        <form id="loginForm" class="space-y-3" onsubmit="handleLogin(event)">
+          <input type="email" id="loginEmail" required placeholder="อีเมล" class="w-full px-4 py-3 rounded-2xl bg-slate-900/60 border border-slate-700 text-white text-sm outline-none focus:border-indigo-500">
+          <input type="password" id="loginPassword" required minlength="6" placeholder="รหัสผ่าน" class="w-full px-4 py-3 rounded-2xl bg-slate-900/60 border border-slate-700 text-white text-sm outline-none focus:border-indigo-500">
+          <button type="submit" class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm">เข้าสู่ระบบ</button>
+        </form>
+        <form id="registerForm" class="space-y-3 hidden" onsubmit="handleRegister(event)">
+          <input type="text" id="registerName" required placeholder="ชื่อที่แสดง" class="w-full px-4 py-3 rounded-2xl bg-slate-900/60 border border-slate-700 text-white text-sm outline-none">
+          <input type="email" id="registerEmail" required placeholder="อีเมล" class="w-full px-4 py-3 rounded-2xl bg-slate-900/60 border border-slate-700 text-white text-sm outline-none">
+          <input type="password" id="registerPassword" required minlength="6" placeholder="รหัสผ่าน (อย่างน้อย 6 ตัว)" class="w-full px-4 py-3 rounded-2xl bg-slate-900/60 border border-slate-700 text-white text-sm outline-none">
+          <button type="submit" class="w-full py-3 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm">สร้างบัญชี</button>
+        </form>
+        <div class="relative py-2"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-700"></div></div><div class="relative flex justify-center text-xs"><span class="px-3 text-slate-500">หรือ</span></div></div>
+        <button onclick="handleGoogleLogin()" class="w-full py-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-800 font-semibold text-sm flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          เข้าสู่ระบบด้วย Google
+        </button>
+        <p id="authError" class="text-rose-400 text-xs text-center hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAMILY ONBOARDING -->
+  <div id="familyScreen" class="hidden min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-indigo-50">
+    <div class="w-full max-w-lg space-y-6">
+      <div class="text-center">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-2xl">👨‍👩‍👧‍👦</div>
+        <h2 class="text-xl font-bold mt-3">ยินดีต้อนรับ</h2>
+        <p class="text-slate-500 text-sm mt-1">เลือกวิธีเริ่มต้นใช้งาน</p>
+        <p id="familyUserEmail" class="text-xs text-indigo-600 mt-2 font-medium"></p>
+      </div>
+      <div class="grid gap-4">
+        <div class="glass rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div class="font-bold text-slate-900">➕ สร้างครอบครัวใหม่</div>
+          <input type="text" id="newFamilyName" placeholder="ชื่อครอบครัว" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+          <button onclick="createFamily()" class="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm">สร้างครอบครัว</button>
+        </div>
+        <div class="glass rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div class="font-bold text-slate-900">🔗 เข้าร่วมครอบครัว</div>
+          <input type="text" id="joinInviteCode" maxlength="6" placeholder="รหัส 6 หลัก" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm outline-none text-center font-mono text-lg tracking-widest">
+          <button onclick="joinFamily()" class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm">เข้าร่วม</button>
+        </div>
+      </div>
+      <button onclick="handleLogout()" class="w-full text-center text-sm text-slate-400 py-2">ออกจากระบบ</button>
+      <p id="familyError" class="text-rose-500 text-xs text-center hidden"></p>
+    </div>
+  </div>
+
+  <!-- LOCKED -->
+  <div id="lockedScreen" class="hidden min-h-screen flex items-center justify-center p-4 bg-slate-900">
+    <div class="max-w-md w-full text-center space-y-5 text-white">
+      <div class="w-16 h-16 mx-auto rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-3xl">🔒</div>
+      <h2 class="text-xl font-bold">ครอบครัวถูกระงับการใช้งาน</h2>
+      <p class="text-slate-300 text-sm">แพ็คเกจรายเดือนของคุณหมดอายุ<br>กรุณาชำระเพื่อใช้งานต่อไป</p>
+      <div class="bg-slate-800 rounded-2xl p-4 text-sm">
+        <div class="flex justify-between"><span class="text-slate-400">แพ็คเกจ</span><span>19 บาท / เดือน</span></div>
+        <div class="flex justify-between mt-1"><span class="text-slate-400">ครอบครัว</span><span id="lockedFamilyName">-</span></div>
+      </div>
+      <button onclick="handleLogout()" class="text-sm text-indigo-400">ออกจากระบบ</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="mainApp" class="hidden min-h-screen flex flex-col">
+    <header class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-lg">💎</div>
+        <div>
+          <div class="font-bold text-sm leading-tight" id="headerFamilyName">ครอบครัว</div>
+          <div class="text-[10px] text-slate-400" id="headerUserName">-</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openInviteModal()" class="px-3 py-1.5 rounded-xl bg-indigo-600/30 border border-indigo-500/40 text-xs font-medium">เชิญ</button>
+        <button onclick="handleLogout()" class="px-3 py-1.5 rounded-xl bg-slate-800 text-xs text-slate-300">ออก</button>
+      </div>
+    </header>
+
+    <div id="superAdminBanner" class="hidden bg-amber-500 text-amber-950 text-center text-xs font-semibold py-1.5">
+      🔑 โหมด SuperAdmin — คุณสามารถดูและจัดการทุกครอบครัวได้
+    </div>
+
+    <!-- Tabs -->
+    <div class="bg-white border-b border-slate-200 px-2 py-2 flex gap-1 overflow-x-auto sticky top-[52px] z-30">
+      <button onclick="switchMainTab('overview')" id="mtab_overview" class="tab-active px-4 py-2 rounded-xl text-xs whitespace-nowrap">ภาพรวม</button>
+      <button onclick="switchMainTab('tx')" id="mtab_tx" class="px-4 py-2 rounded-xl text-xs text-slate-600 whitespace-nowrap">รับ-จ่าย</button>
+      <button onclick="switchMainTab('cashflow')" id="mtab_cashflow" class="px-4 py-2 rounded-xl text-xs text-slate-600 whitespace-nowrap">กระแสเงินสด</button>
+      <button onclick="switchMainTab('debt')" id="mtab_debt" class="px-4 py-2 rounded-xl text-xs text-slate-600 whitespace-nowrap">หนี้สิน</button>
+      <button onclick="switchMainTab('invest')" id="mtab_invest" class="px-4 py-2 rounded-xl text-xs text-slate-600 whitespace-nowrap">ลงทุน</button>
+      <button onclick="switchMainTab('bill')" id="mtab_bill" class="px-4 py-2 rounded-xl text-xs text-slate-600 whitespace-nowrap">บิลรายเดือน</button>
+      <button onclick="switchMainTab('save')" id="mtab_save" class="px-4 py-2 rounded-xl text-xs text-slate-600 whitespace-nowrap">ออมเงิน</button>
+      <button onclick="switchMainTab('members')" id="mtab_members" class="px-4 py-2 rounded-xl text-xs text-slate-600 whitespace-nowrap">สมาชิก</button>
+      <button onclick="switchMainTab('admin')" id="mtab_admin" class="hidden px-4 py-2 rounded-xl text-xs text-amber-700 whitespace-nowrap">Admin</button>
+    </div>
+
+    <main class="flex-1 p-4 max-w-3xl mx-auto w-full space-y-4 pb-20">
+
+      <!-- OVERVIEW -->
+      <div id="panel_overview" class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="glass rounded-2xl p-4 border border-slate-200">
+            <div class="text-[11px] text-slate-400">รายรับเดือนนี้</div>
+            <div id="kpiIncome" class="text-xl font-bold font-num text-emerald-600">฿0</div>
+          </div>
+          <div class="glass rounded-2xl p-4 border border-slate-200">
+            <div class="text-[11px] text-slate-400">รายจ่ายเดือนนี้</div>
+            <div id="kpiExpense" class="text-xl font-bold font-num text-rose-600">฿0</div>
+          </div>
+          <div class="glass rounded-2xl p-4 border border-slate-200">
+            <div class="text-[11px] text-slate-400">คงเหลือเดือนนี้</div>
+            <div id="kpiBalance" class="text-xl font-bold font-num text-indigo-600">฿0</div>
+          </div>
+          <div class="glass rounded-2xl p-4 border border-slate-200">
+            <div class="text-[11px] text-slate-400">หนี้สินคงเหลือ</div>
+            <div id="kpiDebt" class="text-xl font-bold font-num text-rose-500">฿0</div>
+          </div>
+        </div>
+        <div class="glass rounded-2xl p-4 border border-slate-200 text-sm text-slate-500">
+          รหัสเชิญครอบครัว: <span id="overviewInvite" class="font-mono font-bold text-indigo-600 tracking-wider">------</span>
+          <button onclick="openInviteModal()" class="ml-2 text-indigo-500 text-xs underline">คัดลอก</button>
+        </div>
+      </div>
+
+      <!-- TRANSACTIONS -->
+      <div id="panel_tx" class="hidden space-y-4">
+        <div class="glass rounded-2xl p-4 border border-slate-200 space-y-3">
+          <h3 class="font-bold text-sm">➕ บันทึกรายการ</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <select id="txType" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs">
+              <option value="expense">💸 รายจ่าย</option>
+              <option value="income">💰 รายรับ</option>
+            </select>
+            <input type="date" id="txDate" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs">
+          </div>
+          <input type="text" id="txCategory" placeholder="หมวดหมู่ เช่น ค่าอาหาร, เงินเดือน" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs">
+          <input type="number" id="txAmount" step="0.01" min="0.01" placeholder="จำนวนเงิน" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-num font-bold">
+          <input type="text" id="txNote" placeholder="บันทึกช่วยจำ (ไม่บังคับ)" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs">
+          <button onclick="addTransaction()" class="w-full py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold">บันทึก</button>
+        </div>
+        <div class="glass rounded-2xl p-4 border border-slate-200">
+          <h3 class="font-bold text-sm mb-3">รายการล่าสุด</h3>
+          <div id="txList" class="space-y-2 max-h-80 overflow-y-auto text-xs"></div>
+        </div>
+      </div>
+
+      <!-- CASHFLOW -->
+      <div id="panel_cashflow" class="hidden space-y-4">
+        <div class="glass rounded-2xl p-4 border border-slate-200 space-y-3">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-sm">📊 วิเคราะห์กระแสเงินสดรายเดือน</h3>
+            <button onclick="renderCashflow()" class="text-xs text-indigo-600 font-semibold">🔄 รีเฟรช</button>
+          </div>
+          <p class="text-[11px] text-slate-400">คำนวณจากรายรับ-รายจ่ายจริง + ภาระหนี้รายเดือน + บิลคงที่</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="glass rounded-2xl p-4 border border-slate-200">
+            <div class="text-[11px] text-slate-400">รายรับเฉลี่ย/เดือน</div>
+            <div id="cfAvgIncome" class="text-lg font-bold font-num text-emerald-600">฿0</div>
+          </div>
+          <div class="glass rounded-2xl p-4 border border-slate-200">
+            <div class="text-[11px] text-slate-400">รายจ่ายเฉลี่ย/เดือน</div>
+            <div id="cfAvgExpense" class="text-lg font-bold font-num text-rose-600">฿0</div>
+          </div>
+          <div class="glass rounded-2xl p-4 border border-slate-200">
+            <div class="text-[11px] text-slate-400">ภาระคงที่/เดือน</div>
+            <div id="cfFixed" class="text-lg font-bold font-num text-amber-600">฿0</div>
+          </div>
+          <div class="glass rounded-2xl p-4 border border-slate-200">
+            <div class="text-[11px] text-slate-400">กระแสเงินสดสุทธิเฉลี่ย</div>
+            <div id="cfNet" class="text-lg font-bold font-num text-indigo-600">฿0</div>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-4 border border-slate-200">
+          <h4 class="font-bold text-sm mb-3">สรุปรายเดือน (ย้อนหลัง)</h4>
+          <div id="cfMonthList" class="space-y-2 text-xs max-h-72 overflow-y-auto"></div>
+        </div>
+
+        <div id="cfInsight" class="glass rounded-2xl p-4 border border-slate-200 text-sm text-slate-600"></div>
+      </div>
+
+      <!-- DEBTS -->
+      <div id="panel_debt" class="hidden space-y-4">
+        <div class="glass rounded-2xl p-4 border border-slate-200 space-y-3">
+          <h3 class="font-bold text-sm">➕ เพิ่มหนี้สิน</h3>
+          <input type="text" id="debtName" placeholder="ชื่อหนี้ เช่น บัตรเครดิต" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs">
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" id="debtRemain" step="0.01" placeholder="ยอดคงเหลือ" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-num">
+            <input type="number" id="debtMonthly" step="0.01" placeholder="จ่าย/เดือน" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-num">
+          </div>
+          <button onclick="addDebt()" class="w-full py-2.5 rounded-xl bg-rose-600 text-white text-xs font-semibold">บันทึกหนี้</button>
+        </div>
+        <div id="debtList" class="space-y-2"></div>
+      </div>
+
+      <!-- INVESTMENTS -->
+      <div id="panel_invest" class="hidden space-y-4">
+        <div class="glass rounded-2xl p-4 border border-slate-200 space-y-3">
+          <h3 class="font-bold text-sm">➕ เพิ่มรายการลงทุน</h3>
+          <input type="text" id="invName" placeholder="ชื่อ เช่น กองทุน, หุ้นกู้" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs">
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" id="invPrincipal" step="0.01" placeholder="เงินต้น" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-num">
+            <input type="number" id="invReturn" step="0.01" placeholder="ผลตอบแทน/รอบ" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-num">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" id="invCycle" min="1" placeholder="รอบ (วัน)" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs">
+            <input type="date" id="invLastDate" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs">
+          </div>
+          <button onclick="addInvest()" class="w-full py-2.5 rounded-xl bg-amber-600 text-white text-xs font-semibold">บันทึกการลงทุน</button>
+        </div>
+        <div id="investList" class="space-y-2"></div>
+      </div>
+
+      <!-- BILLS -->
+      <div id="panel_bill" class="hidden space-y-4">
+        <div class="glass rounded-2xl p-4 border border-slate-200 space-y-3">
+          <h3 class="font-bold text-sm">➕ เพิ่มบิลรายเดือน</h3>
+          <input type="text" id="billName" placeholder="ชื่อ เช่น ค่าไฟ, Netflix" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs">
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" id="billAmount" step="0.01" placeholder="ยอด/เดือน" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-num">
+            <input type="number" id="billDueDay" min="1" max="31" placeholder="วันที่ตัด (1-31)" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs">
+          </div>
+          <button onclick="addBill()" class="w-full py-2.5 rounded-xl bg-violet-600 text-white text-xs font-semibold">บันทึกบิล</button>
+        </div>
+        <div id="billList" class="space-y-2"></div>
+      </div>
+
+      <!-- SAVINGS -->
+      <div id="panel_save" class="hidden space-y-4">
+        <div class="glass rounded-2xl p-4 border border-slate-200 space-y-3">
+          <h3 class="font-bold text-sm">➕ ตั้งเป้าหมายออม</h3>
+          <input type="text" id="saveName" placeholder="ชื่อเป้าหมาย" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs">
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" id="saveTarget" step="0.01" placeholder="เป้าหมาย" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-num">
+            <input type="number" id="saveCurrent" step="0.01" placeholder="ออมแล้ว" class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-num">
+          </div>
+          <button onclick="addSaving()" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold">บันทึก</button>
+        </div>
+        <div id="saveList" class="space-y-2"></div>
+      </div>
+
+      <!-- MEMBERS -->
+      <div id="panel_members" class="hidden space-y-4">
+        <div class="glass rounded-2xl p-4 border border-slate-200">
+          <h3 class="font-bold text-sm mb-3">สมาชิกในครอบครัว</h3>
+          <div id="membersList" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- ADMIN -->
+      <div id="panel_admin" class="hidden space-y-4">
+        <div class="glass rounded-2xl p-4 border border-amber-200 bg-amber-50/40">
+          <h3 class="font-bold text-sm text-amber-800 mb-2">🔑 SuperAdmin – ทุกครอบครัว</h3>
+          <div id="allFamiliesList" class="space-y-2"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- INVITE MODAL -->
+  <div id="inviteModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold">เชิญสมาชิก</h3>
+        <button onclick="closeInviteModal()" class="w-8 h-8 rounded-full bg-slate-100">✕</button>
+      </div>
+      <div class="bg-indigo-50 rounded-2xl p-5 text-center">
+        <div class="text-3xl font-bold font-mono tracking-[0.3em] text-indigo-700" id="modalInviteCode">------</div>
+      </div>
+      <button onclick="copyInviteCode()" class="w-full py-3 rounded-2xl bg-indigo-600 text-white font-semibold text-sm">คัดลอกรหัส</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, onSnapshot, addDoc, deleteDoc, serverTimestamp, arrayUnion, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCV1n21pCPImqctSb1S4KZWlyAH-_wHRI",
+      authDomain: "duo-wealth-pro.firebaseapp.com",
+      projectId: "duo-wealth-pro",
+      storageBucket: "duo-wealth-pro.firebasestorage.app",
+      messagingSenderId: "552301083383",
+      appId: "1:552301083383:web:8e51a4efd50c00da0931f2",
+      measurementId: "G-2Y6FFN8592"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const googleProvider = new GoogleAuthProvider();
+    const SUPER_ADMIN_EMAIL = "ck.thipchan@gmail.com";
+
+    let currentUser = null;
+    let currentUserData = null;
+    let currentFamily = null;
+    let isSuperAdmin = false;
+    let unsubTx = null, unsubDebt = null, unsubSave = null, unsubInv = null, unsubBill = null;
+    let cacheTxs = [], cacheDebts = [], cacheBills = [];
+
+    function showScreen(id) {
+      ["loadingScreen","authScreen","familyScreen","lockedScreen","mainApp"].forEach(s => document.getElementById(s).classList.add("hidden"));
+      document.getElementById(id).classList.remove("hidden");
+    }
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.classList.remove("hidden");
+    }
+    function hideError(id) { document.getElementById(id).classList.add("hidden"); }
+
+    window.switchAuthTab = (tab) => {
+      const isLogin = tab === "login";
+      document.getElementById("loginForm").classList.toggle("hidden", !isLogin);
+      document.getElementById("registerForm").classList.toggle("hidden", isLogin);
+      document.getElementById("tabLogin").className = isLogin ? "flex-1 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white" : "flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-300";
+      document.getElementById("tabRegister").className = !isLogin ? "flex-1 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 text-white" : "flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-300";
+      hideError("authError");
+    };
+
+    window.switchMainTab = (tab) => {
+      ["overview","tx","cashflow","debt","invest","bill","save","members","admin"].forEach(t => {
+        document.getElementById("panel_"+t)?.classList.add("hidden");
+        const btn = document.getElementById("mtab_"+t);
+        if (btn) btn.className = "px-4 py-2 rounded-xl text-xs text-slate-600 whitespace-nowrap";
+      });
+      document.getElementById("panel_"+tab)?.classList.remove("hidden");
+      const active = document.getElementById("mtab_"+tab);
+      if (active) active.className = "tab-active px-4 py-2 rounded-xl text-xs whitespace-nowrap";
+      if (tab === "cashflow") renderCashflow();
+    };
+
+    // Auth
+    window.handleRegister = async (e) => {
+      e.preventDefault(); hideError("authError");
+      try {
+        const name = document.getElementById("registerName").value.trim();
+        const email = document.getElementById("registerEmail").value.trim();
+        const password = document.getElementById("registerPassword").value;
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(cred.user, { displayName: name });
+        await setDoc(doc(db, "users", cred.user.uid), {
+          email, displayName: name, familyIds: [],
+          role: email === SUPER_ADMIN_EMAIL ? "superadmin" : "user",
+          createdAt: serverTimestamp()
+        });
+      } catch (err) { showError("authError", err.code || err.message); }
+    };
+
+    window.handleLogin = async (e) => {
+      e.preventDefault(); hideError("authError");
+      try {
+        await signInWithEmailAndPassword(auth, document.getElementById("loginEmail").value.trim(), document.getElementById("loginPassword").value);
+      } catch (err) { showError("authError", "อีเมลหรือรหัสผ่านไม่ถูกต้อง"); }
+    };
+
+    window.handleGoogleLogin = async () => {
+      hideError("authError");
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+        const ref = doc(db, "users", user.uid);
+        if (!(await getDoc(ref)).exists()) {
+          await setDoc(ref, {
+            email: user.email, displayName: user.displayName || "ผู้ใช้", familyIds: [],
+            role: user.email === SUPER_ADMIN_EMAIL ? "superadmin" : "user",
+            createdAt: serverTimestamp()
+          });
+        }
+      } catch (err) { showError("authError", err.message); }
+    };
+
+    window.handleLogout = async () => {
+      [unsubTx, unsubDebt, unsubSave, unsubInv, unsubBill].forEach(fn => { if (fn) fn(); });
+      await signOut(auth);
+      currentUser = currentUserData = currentFamily = null;
+      showScreen("authScreen");
+    };
+
+    function generateInviteCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
+
+    window.createFamily = async () => {
+      hideError("familyError");
+      const name = document.getElementById("newFamilyName").value.trim();
+      if (!name) return showError("familyError", "กรุณาใส่ชื่อครอบครัว");
+      try {
+        const familyId = doc(collection(db, "families")).id;
+        const inviteCode = generateInviteCode();
+        await setDoc(doc(db, "families", familyId), {
+          name, ownerId: currentUser.uid, inviteCode, status: "active", plan: "free",
+          members: [{ uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName || "เจ้าของ", role: "owner", joinedAt: new Date().toISOString() }],
+          createdAt: serverTimestamp()
+        });
+        await updateDoc(doc(db, "users", currentUser.uid), { familyIds: arrayUnion(familyId) });
+        await loadUserAndRoute();
+      } catch (err) { showError("familyError", err.message); }
+    };
+
+    window.joinFamily = async () => {
+      hideError("familyError");
+      const code = document.getElementById("joinInviteCode").value.trim();
+      if (code.length !== 6) return showError("familyError", "รหัสต้องมี 6 หลัก");
+      try {
+        const snap = await getDocs(query(collection(db, "families"), where("inviteCode", "==", code)));
+        if (snap.empty) return showError("familyError", "ไม่พบรหัสเชิญ");
+        const familyDoc = snap.docs[0];
+        const family = familyDoc.data();
+        if (family.status === "locked") return showError("familyError", "ครอบครัวนี้ถูกระงับ");
+        if ((family.members||[]).some(m => m.uid === currentUser.uid)) return showError("familyError", "คุณเป็นสมาชิกอยู่แล้ว");
+        await updateDoc(doc(db, "families", familyDoc.id), {
+          members: arrayUnion({ uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName || "สมาชิก", role: "member", joinedAt: new Date().toISOString() })
+        });
+        await updateDoc(doc(db, "users", currentUser.uid), { familyIds: arrayUnion(familyDoc.id) });
+        await loadUserAndRoute();
+      } catch (err) { showError("familyError", err.message); }
+    };
+
+    async function loadUserAndRoute() {
+      if (!currentUser) return showScreen("authScreen");
+      let userSnap = await getDoc(doc(db, "users", currentUser.uid));
+      if (!userSnap.exists()) {
+        await setDoc(doc(db, "users", currentUser.uid), {
+          email: currentUser.email, displayName: currentUser.displayName || "ผู้ใช้", familyIds: [],
+          role: currentUser.email === SUPER_ADMIN_EMAIL ? "superadmin" : "user", createdAt: serverTimestamp()
+        });
+        userSnap = await getDoc(doc(db, "users", currentUser.uid));
+      }
+      currentUserData = userSnap.data();
+      isSuperAdmin = currentUserData.role === "superadmin" || currentUser.email === SUPER_ADMIN_EMAIL;
+
+      const familyIds = currentUserData.familyIds || [];
+      if (familyIds.length === 0) {
+        document.getElementById("familyUserEmail").textContent = currentUser.email;
+        return showScreen("familyScreen");
+      }
+      const familySnap = await getDoc(doc(db, "families", familyIds[0]));
+      if (!familySnap.exists()) return showScreen("familyScreen");
+      currentFamily = { id: familySnap.id, ...familySnap.data() };
+
+      if (currentFamily.status === "locked" && !isSuperAdmin) {
+        document.getElementById("lockedFamilyName").textContent = currentFamily.name;
+        return showScreen("lockedScreen");
+      }
+      renderMainShell();
+      startFinanceListeners();
+      showScreen("mainApp");
+      switchMainTab("overview");
+    }
+
+    function renderMainShell() {
+      document.getElementById("headerFamilyName").textContent = currentFamily.name;
+      document.getElementById("headerUserName").textContent = currentUser.displayName || currentUser.email;
+      document.getElementById("overviewInvite").textContent = currentFamily.inviteCode || "------";
+      document.getElementById("modalInviteCode").textContent = currentFamily.inviteCode || "------";
+
+      document.getElementById("membersList").innerHTML = (currentFamily.members || []).map(m => `
+        <div class="flex justify-between items-center py-2 px-3 rounded-xl bg-slate-50 text-sm">
+          <div><div class="font-medium">${m.displayName||m.email}</div><div class="text-[11px] text-slate-400">${m.email}</div></div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full ${m.role==='owner'?'bg-amber-100 text-amber-700':'bg-slate-200 text-slate-600'}">${m.role==='owner'?'เจ้าของ':'สมาชิก'}</span>
+        </div>`).join("");
+
+      if (isSuperAdmin) {
+        document.getElementById("superAdminBanner").classList.remove("hidden");
+        document.getElementById("mtab_admin").classList.remove("hidden");
+        loadAllFamilies();
+      } else {
+        document.getElementById("superAdminBanner").classList.add("hidden");
+        document.getElementById("mtab_admin").classList.add("hidden");
+      }
+    }
+
+    function startFinanceListeners() {
+      if (!currentFamily) return;
+      const fid = currentFamily.id;
+      [unsubTx, unsubDebt, unsubSave, unsubInv, unsubBill].forEach(fn => { if (fn) fn(); });
+
+      unsubTx = onSnapshot(query(collection(db, "families", fid, "transactions"), orderBy("date", "desc"), limit(200)), snap => {
+        const txs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        cacheTxs = txs;
+        renderTransactions(txs);
+        updateKPIs(txs);
+      });
+
+      unsubDebt = onSnapshot(collection(db, "families", fid, "debts"), snap => {
+        const debts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        cacheDebts = debts;
+        renderDebts(debts);
+        const total = debts.reduce((s,d) => s + Number(d.remaining||0), 0);
+        document.getElementById("kpiDebt").textContent = "฿" + total.toLocaleString();
+      });
+
+      unsubSave = onSnapshot(collection(db, "families", fid, "savings"), snap => {
+        renderSavings(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+
+      unsubInv = onSnapshot(collection(db, "families", fid, "investments"), snap => {
+        renderInvests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+
+      unsubBill = onSnapshot(collection(db, "families", fid, "bills"), snap => {
+        cacheBills = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderBills(cacheBills);
+      });
+    }
+
+    function updateKPIs(txs) {
+      const now = new Date();
+      const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+      let income = 0, expense = 0;
+      txs.forEach(t => {
+        if (t.date && t.date.startsWith(monthStr)) {
+          if (t.type === "income") income += Number(t.amount);
+          else expense += Number(t.amount);
+        }
+      });
+      document.getElementById("kpiIncome").textContent = "฿" + income.toLocaleString();
+      document.getElementById("kpiExpense").textContent = "฿" + expense.toLocaleString();
+      document.getElementById("kpiBalance").textContent = "฿" + (income - expense).toLocaleString();
+    }
+
+    window.renderCashflow = () => {
+      const monthNames = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+      const byMonth = {};
+      cacheTxs.forEach(t => {
+        if (!t.date || t.date.length < 7) return;
+        const key = t.date.slice(0, 7);
+        if (!byMonth[key]) byMonth[key] = { income: 0, expense: 0 };
+        if (t.type === "income") byMonth[key].income += Number(t.amount) || 0;
+        else byMonth[key].expense += Number(t.amount) || 0;
+      });
+
+      const keys = Object.keys(byMonth).sort().reverse().slice(0, 12);
+      const fixedDebt = cacheDebts.reduce((s, d) => s + (Number(d.monthly) || 0), 0);
+      const fixedBill = cacheBills.reduce((s, b) => s + (Number(b.amount) || 0), 0);
+      const fixedTotal = fixedDebt + fixedBill;
+
+      let sumInc = 0, sumExp = 0;
+      keys.forEach(k => { sumInc += byMonth[k].income; sumExp += byMonth[k].expense; });
+      const n = Math.max(keys.length, 1);
+      const avgInc = sumInc / n;
+      const avgExp = sumExp / n;
+      const avgNet = avgInc - avgExp;
+
+      document.getElementById("cfAvgIncome").textContent = "฿" + Math.round(avgInc).toLocaleString();
+      document.getElementById("cfAvgExpense").textContent = "฿" + Math.round(avgExp).toLocaleString();
+      document.getElementById("cfFixed").textContent = "฿" + Math.round(fixedTotal).toLocaleString();
+      document.getElementById("cfNet").textContent = "฿" + Math.round(avgNet).toLocaleString();
+      document.getElementById("cfNet").className = "text-lg font-bold font-num " + (avgNet >= 0 ? "text-emerald-600" : "text-rose-600");
+
+      const list = document.getElementById("cfMonthList");
+      if (!keys.length) {
+        list.innerHTML = `<div class="text-slate-400 text-center py-6">ยังไม่มีข้อมูลรายเดือน ลองบันทึกรายรับ-รายจ่ายก่อน</div>`;
+      } else {
+        list.innerHTML = keys.map(k => {
+          const [y, m] = k.split("-");
+          const label = `${monthNames[parseInt(m)-1]} ${parseInt(y) + 543}`;
+          const net = byMonth[k].income - byMonth[k].expense;
+          const maxBar = Math.max(byMonth[k].income, byMonth[k].expense, 1);
+          return `
+            <div class="p-3 rounded-xl bg-slate-50 space-y-1.5">
+              <div class="flex justify-between items-center">
+                <span class="font-semibold">${label}</span>
+                <span class="font-num font-bold ${net>=0?'text-emerald-600':'text-rose-600'}">${net>=0?'+':''}฿${Math.round(net).toLocaleString()}</span>
+              </div>
+              <div class="flex gap-2 text-[10px]">
+                <div class="flex-1">
+                  <div class="text-emerald-600 mb-0.5">รับ ฿${Math.round(byMonth[k].income).toLocaleString()}</div>
+                  <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:${(byMonth[k].income/maxBar)*100}%"></div></div>
+                </div>
+                <div class="flex-1">
+                  <div class="text-rose-600 mb-0.5">จ่าย ฿${Math.round(byMonth[k].expense).toLocaleString()}</div>
+                  <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden"><div class="h-full bg-rose-500 rounded-full" style="width:${(byMonth[k].expense/maxBar)*100}%"></div></div>
+                </div>
+              </div>
+            </div>`;
+        }).join("");
+      }
+
+      const insight = document.getElementById("cfInsight");
+      let tips = [];
+      if (avgNet < 0) tips.push("⚠️ กระแสเงินสดเฉลี่ยติดลบ ควรลดรายจ่ายหรือเพิ่มรายรับ");
+      else if (avgNet < fixedTotal) tips.push("⚡ เงินเหลือเฉลี่ยน้อยกว่าภาระคงที่ ระวังสภาพคล่องตึงตัว");
+      else tips.push("✅ กระแสเงินสดโดยรวมเป็นบวก สภาพคล่องอยู่ในเกณฑ์ดี");
+      if (fixedTotal > 0 && avgInc > 0 && fixedTotal / avgInc > 0.5) tips.push("📌 ภาระคงที่กินรายรับเกิน 50% ควรพิจารณาปรับโครงสร้างหนี้/บิล");
+      if (keys.length < 2) tips.push("💡 บันทึกข้อมูลต่อเนื่องหลายเดือน จะวิเคราะห์ได้แม่นยำขึ้น");
+      insight.innerHTML = `<div class="font-semibold text-slate-700 mb-1">สรุปเชิงลึก</div>` + tips.map(t => `<div class="text-xs leading-relaxed mt-1">${t}</div>`).join("");
+    };
+
+    function renderTransactions(txs) {
+      const el = document.getElementById("txList");
+      if (!txs.length) { el.innerHTML = `<div class="text-slate-400 text-center py-4">ยังไม่มีรายการ</div>`; return; }
+      el.innerHTML = txs.map(t => `
+        <div class="flex justify-between items-center py-2 border-b border-slate-100">
+          <div>
+            <div class="font-medium">${t.category || "-"} ${t.note ? `<span class="text-slate-400">(${t.note})</span>` : ""}</div>
+            <div class="text-[10px] text-slate-400">${t.date} • ${t.createdByName || ""}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-num font-bold ${t.type==='income'?'text-emerald-600':'text-rose-600'}">${t.type==='income'?'+':'-'}฿${Number(t.amount).toLocaleString()}</span>
+            <button onclick="deleteTx('${t.id}')" class="text-slate-300 hover:text-rose-500 text-xs">✕</button>
+          </div>
+        </div>`).join("");
+    }
+
+    window.addTransaction = async () => {
+      const type = document.getElementById("txType").value;
+      const date = document.getElementById("txDate").value;
+      const category = document.getElementById("txCategory").value.trim();
+      const amount = parseFloat(document.getElementById("txAmount").value);
+      const note = document.getElementById("txNote").value.trim();
+      if (!date || !category || !amount) return alert("กรุณากรอกข้อมูลให้ครบ");
+      await addDoc(collection(db, "families", currentFamily.id, "transactions"), {
+        type, date, category, amount, note,
+        createdBy: currentUser.uid,
+        createdByName: currentUser.displayName || currentUser.email,
+        createdAt: serverTimestamp()
+      });
+      document.getElementById("txAmount").value = "";
+      document.getElementById("txNote").value = "";
+      document.getElementById("txCategory").value = "";
+    };
+
+    window.deleteTx = async (id) => {
+      if (!confirm("ลบรายการนี้?")) return;
+      await deleteDoc(doc(db, "families", currentFamily.id, "transactions", id));
+    };
+
+    window.addDebt = async () => {
+      const name = document.getElementById("debtName").value.trim();
+      const remaining = parseFloat(document.getElementById("debtRemain").value);
+      const monthly = parseFloat(document.getElementById("debtMonthly").value) || 0;
+      if (!name || isNaN(remaining)) return alert("กรอกชื่อและยอดคงเหลือ");
+      await addDoc(collection(db, "families", currentFamily.id, "debts"), {
+        name, remaining, monthly, createdBy: currentUser.uid, createdAt: serverTimestamp()
+      });
+      document.getElementById("debtName").value = "";
+      document.getElementById("debtRemain").value = "";
+      document.getElementById("debtMonthly").value = "";
+    };
+
+    function renderDebts(debts) {
+      const el = document.getElementById("debtList");
+      if (!debts.length) { el.innerHTML = `<div class="text-slate-400 text-center text-sm py-4">ยังไม่มีหนี้สิน</div>`; return; }
+      el.innerHTML = debts.map(d => `
+        <div class="glass rounded-2xl p-3 border border-slate-200 flex justify-between items-center text-sm">
+          <div>
+            <div class="font-medium">${d.name}</div>
+            <div class="text-[11px] text-slate-400">จ่าย/เดือน ฿${Number(d.monthly||0).toLocaleString()}</div>
+          </div>
+          <div class="text-right">
+            <div class="font-num font-bold text-rose-600">฿${Number(d.remaining).toLocaleString()}</div>
+            <button onclick="deleteDebt('${d.id}')" class="text-[10px] text-slate-400">ลบ</button>
+          </div>
+        </div>`).join("");
+    }
+
+    window.deleteDebt = async (id) => {
+      if (!confirm("ลบหนี้นี้?")) return;
+      await deleteDoc(doc(db, "families", currentFamily.id, "debts", id));
+    };
+
+    window.addSaving = async () => {
+      const name = document.getElementById("saveName").value.trim();
+      const target = parseFloat(document.getElementById("saveTarget").value);
+      const current = parseFloat(document.getElementById("saveCurrent").value) || 0;
+      if (!name || isNaN(target)) return alert("กรอกชื่อและเป้าหมาย");
+      await addDoc(collection(db, "families", currentFamily.id, "savings"), {
+        name, target, current, createdBy: currentUser.uid, createdAt: serverTimestamp()
+      });
+      document.getElementById("saveName").value = "";
+      document.getElementById("saveTarget").value = "";
+      document.getElementById("saveCurrent").value = "";
+    };
+
+    function renderSavings(list) {
+      const el = document.getElementById("saveList");
+      if (!list.length) { el.innerHTML = `<div class="text-slate-400 text-center text-sm py-4">ยังไม่มีเป้าหมาย</div>`; return; }
+      el.innerHTML = list.map(s => {
+        const pct = Math.min(100, (Number(s.current)/Number(s.target))*100);
+        return `
+        <div class="glass rounded-2xl p-3 border border-slate-200 text-sm space-y-2">
+          <div class="flex justify-between"><span class="font-medium">${s.name}</span><span class="font-num text-emerald-600">฿${Number(s.current).toLocaleString()} / ฿${Number(s.target).toLocaleString()}</span></div>
+          <div class="w-full bg-slate-100 rounded-full h-2"><div class="bg-emerald-500 h-2 rounded-full" style="width:${pct}%"></div></div>
+          <button onclick="deleteSave('${s.id}')" class="text-[10px] text-slate-400">ลบ</button>
+        </div>`;
+      }).join("");
+    }
+
+    window.deleteSave = async (id) => {
+      if (!confirm("ลบเป้าหมายนี้?")) return;
+      await deleteDoc(doc(db, "families", currentFamily.id, "savings", id));
+    };
+
+    // ----- Investments -----
+    window.addInvest = async () => {
+      const name = document.getElementById("invName").value.trim();
+      const principal = parseFloat(document.getElementById("invPrincipal").value);
+      const returnAmt = parseFloat(document.getElementById("invReturn").value);
+      const cycle = parseInt(document.getElementById("invCycle").value);
+      const lastDate = document.getElementById("invLastDate").value;
+      if (!name || isNaN(principal) || isNaN(returnAmt) || !cycle || !lastDate) return alert("กรอกข้อมูลให้ครบ");
+      await addDoc(collection(db, "families", currentFamily.id, "investments"), {
+        name, principal, return_amount: returnAmt, cycle_days: cycle,
+        last_collected_date: lastDate, total_returned: 0, collections: [],
+        createdBy: currentUser.uid, createdAt: serverTimestamp()
+      });
+      document.getElementById("invName").value = "";
+      document.getElementById("invPrincipal").value = "";
+      document.getElementById("invReturn").value = "";
+      document.getElementById("invCycle").value = "";
+    };
+
+    function renderInvests(list) {
+      const el = document.getElementById("investList");
+      if (!list.length) { el.innerHTML = `<div class="text-slate-400 text-center text-sm py-4">ยังไม่มีรายการลงทุน</div>`; return; }
+      const today = new Date(); today.setHours(0,0,0,0);
+      el.innerHTML = list.map(i => {
+        let isDue = false, nextStr = "-";
+        if (i.last_collected_date && i.cycle_days) {
+          const last = new Date(i.last_collected_date);
+          const next = new Date(last); next.setDate(last.getDate() + parseInt(i.cycle_days));
+          nextStr = next.toISOString().split("T")[0];
+          if (next <= today) isDue = true;
+        }
+        return `
+        <div class="glass rounded-2xl p-3 border ${isDue?'border-rose-300 bg-rose-50/40':'border-slate-200'} text-sm space-y-2">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="font-medium">${i.name} ${isDue?'<span class="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">ครบกำหนด</span>':''}</div>
+              <div class="text-[11px] text-slate-400">เงินต้น ฿${Number(i.principal).toLocaleString()} • ผลตอบแทน +฿${Number(i.return_amount).toLocaleString()}/รอบ</div>
+              <div class="text-[11px] text-slate-400">รอบ ${i.cycle_days} วัน • ครบถัดไป ${nextStr} • รับแล้ว ฿${Number(i.total_returned||0).toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="collectInvest('${i.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold ${isDue?'ring-2 ring-emerald-400':''}">💰 รับยอด</button>
+            <button onclick="deleteInvest('${i.id}')" class="px-3 py-1.5 rounded-lg text-[11px] text-slate-400">ลบ</button>
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    window.collectInvest = async (id) => {
+      const ref = doc(db, "families", currentFamily.id, "investments", id);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+      const inv = snap.data();
+      const amount = Number(inv.return_amount) || 0;
+      if (amount <= 0) return alert("ยอดผลตอบแทนเป็น 0");
+      if (!confirm(`รับผลตอบแทน ฿${amount.toLocaleString()} จาก "${inv.name}" และลงรายรับหรือไม่?`)) return;
+      const todayStr = new Date().toISOString().split("T")[0];
+      await addDoc(collection(db, "families", currentFamily.id, "transactions"), {
+        type: "income", date: todayStr, category: "📈 กำไร/ผลตอบแทน",
+        amount, note: "รับจาก: " + inv.name,
+        createdBy: currentUser.uid, createdByName: currentUser.displayName || currentUser.email,
+        createdAt: serverTimestamp()
+      });
+      const collections = inv.collections || [];
+      collections.push({ date: todayStr, amount });
+      await updateDoc(ref, {
+        last_collected_date: todayStr,
+        total_returned: (Number(inv.total_returned) || 0) + amount,
+        collections
+      });
+      alert("รับยอดเรียบร้อย ลงรายรับแล้ว");
+    };
+
+    window.deleteInvest = async (id) => {
+      if (!confirm("ลบรายการลงทุนนี้?")) return;
+      await deleteDoc(doc(db, "families", currentFamily.id, "investments", id));
+    };
+
+    // ----- Bills -----
+    window.addBill = async () => {
+      const name = document.getElementById("billName").value.trim();
+      const amount = parseFloat(document.getElementById("billAmount").value);
+      const dueDay = parseInt(document.getElementById("billDueDay").value);
+      if (!name || isNaN(amount) || !dueDay) return alert("กรอกข้อมูลให้ครบ");
+      await addDoc(collection(db, "families", currentFamily.id, "bills"), {
+        name, amount, due_day: dueDay, last_paid: null,
+        createdBy: currentUser.uid, createdAt: serverTimestamp()
+      });
+      document.getElementById("billName").value = "";
+      document.getElementById("billAmount").value = "";
+      document.getElementById("billDueDay").value = "";
+    };
+
+    function renderBills(list) {
+      const el = document.getElementById("billList");
+      if (!list.length) { el.innerHTML = `<div class="text-slate-400 text-center text-sm py-4">ยังไม่มีบิลรายเดือน</div>`; return; }
+      el.innerHTML = list.map(b => `
+        <div class="glass rounded-2xl p-3 border border-slate-200 flex justify-between items-center text-sm">
+          <div>
+            <div class="font-medium">${b.name}</div>
+            <div class="text-[11px] text-slate-400">ตัดทุกวันที่ ${b.due_day} • ล่าสุด ${b.last_paid || "-"}</div>
+          </div>
+          <div class="text-right space-y-1">
+            <div class="font-num font-bold text-violet-600">฿${Number(b.amount).toLocaleString()}</div>
+            <div class="flex gap-1 justify-end">
+              <button onclick="payBill('${b.id}')" class="text-[10px] px-2 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">ชำระ</button>
+              <button onclick="deleteBill('${b.id}')" class="text-[10px] text-slate-400">ลบ</button>
+            </div>
+          </div>
+        </div>`).join("");
+    }
+
+    window.payBill = async (id) => {
+      const ref = doc(db, "families", currentFamily.id, "bills", id);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+      const bill = snap.data();
+      if (!confirm(`บันทึกการชำระ "${bill.name}" ยอด ฿${Number(bill.amount).toLocaleString()}?`)) return;
+      const todayStr = new Date().toISOString().split("T")[0];
+      await addDoc(collection(db, "families", currentFamily.id, "transactions"), {
+        type: "expense", date: todayStr, category: "บิลรายเดือน: " + bill.name,
+        amount: Number(bill.amount), note: "ตัดรอบวันที่ " + bill.due_day,
+        createdBy: currentUser.uid, createdByName: currentUser.displayName || currentUser.email,
+        createdAt: serverTimestamp()
+      });
+      await updateDoc(ref, { last_paid: todayStr });
+      alert("บันทึกการชำระแล้ว");
+    };
+
+    window.deleteBill = async (id) => {
+      if (!confirm("ลบบิลนี้?")) return;
+      await deleteDoc(doc(db, "families", currentFamily.id, "bills", id));
+    };
+
+    async function loadAllFamilies() {
+      const snap = await getDocs(collection(db, "families"));
+      document.getElementById("allFamiliesList").innerHTML = snap.docs.map(d => {
+        const f = d.data();
+        const locked = f.status === "locked";
+        return `<div class="flex justify-between items-center p-3 rounded-xl bg-white border text-sm">
+          <div><div class="font-medium">${f.name}</div><div class="text-[11px] text-slate-400">${(f.members||[]).length} สมาชิก • ${f.plan||'free'}</div></div>
+          <button onclick="toggleFamilyLock('${d.id}', ${locked})" class="px-3 py-1 rounded-lg text-xs font-semibold ${locked?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}">${locked?'ปลดล็อก':'ล็อก'}</button>
+        </div>`;
+      }).join("") || `<div class="text-sm text-slate-500">ยังไม่มีครอบครัว</div>`;
+    }
+
+    window.toggleFamilyLock = async (id, locked) => {
+      await updateDoc(doc(db, "families", id), { status: locked ? "active" : "locked" });
+      loadAllFamilies();
+    };
+
+    window.openInviteModal = () => document.getElementById("inviteModal").classList.remove("hidden");
+    window.closeInviteModal = () => document.getElementById("inviteModal").classList.add("hidden");
+    window.copyInviteCode = () => {
+      navigator.clipboard.writeText(currentFamily?.inviteCode || "");
+      alert("คัดลอกแล้ว: " + (currentFamily?.inviteCode || ""));
+    };
+
+    // Init dates
+    document.getElementById("txDate").valueAsDate = new Date();
+    document.getElementById("invLastDate").valueAsDate = new Date();
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (user) await loadUserAndRoute();
+      else showScreen("authScreen");
+    });
+  </script>
+</body>
+</html>
